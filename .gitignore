@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Ignore images
+*.jpeg
+
+# Ignore neural networks
+*.mat
