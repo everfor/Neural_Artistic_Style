@@ -90,6 +90,7 @@ ENV/
 
 # Ignore images
 *.jpeg
+*.png
 
 # Ignore neural networks
 *.mat
