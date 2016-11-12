@@ -5,10 +5,11 @@ import numpy as np
 content_layer = 'relu4_2'
 style_layers = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 
-def convert_style(net_path, initial, content, style, iterations, content_weight, style_weight, learning_rate):
+def convert_style(net_path, content, style, iterations, content_weight, style_weight, learning_rate, check_per_iteration):
+    print("Total iterations: {0}".format(iterations))
     # Store shapes of both images
-    content_shape = (1, ) + content.shape
-    style_shape = (1, ) + style.shape
+    content_shape = (1,) + content.shape
+    style_shape = (1,) + style.shape
 
     # Features
     content_features = {}
@@ -22,7 +23,10 @@ def convert_style(net_path, initial, content, style, iterations, content_weight,
         net, mean = vgg.build_net(net_path, image)
         # Extract features
         preprocessed_content = np.array([vgg.pre_process_image(content, mean)])
-        content_features[content_layer] = net[content_layer].eval(feed_dict = {image: preprocessed_content})
+        content_features[content_layer] = net[content_layer].eval(
+            feed_dict = {image: preprocessed_content})
+
+    print("Content feature extracted")
 
     # Extract features for style
     g = tf.Graph()
@@ -33,25 +37,22 @@ def convert_style(net_path, initial, content, style, iterations, content_weight,
         # Extract style features
         preprocessed_style = np.array([vgg.pre_process_image(style, mean)])
         for layer in style_layers:
-            layer_features = net[layer].eval(feed_dict = {image: preprocessed_style})
+            layer_features = net[layer].eval(
+                feed_dict = {image: preprocessed_style})
             style_features[layer] = layer_features
+
+    print("Style feature extracted")
 
     # Reconstruct image through backprogpagation
     g = tf.Graph()
     with g.as_default():
-        if initial is None:
-            # Random noise as initial
-            initial = tf.random_normal(content_shape) * 0.256
-        else:
-            initial = np.array([vgg.pre_process_image(initlal, mean)])
-            initial = initial.astype('float32')
-
+        # Random generated image as initial state
+        image = tf.Variable(tf.random_normal(content_shape) * 0.256)
         # Build convnet for backprogpagation
-        image = tf.Variable(initial)
         net, _ = vgg.build_net(net_path, image)
 
         # Calculate content loss
-        content_loss = 2 * tf.nn.l2_loss(net[content_layer] - content_features[content_layer]) / content_features[content_layer].size
+        content_loss =  2 * tf.nn.l2_loss(net[content_layer] - content_features[content_layer]) / content_features[content_layer].size
 
         # Calculate style loss
         style_loss = 0
@@ -69,7 +70,6 @@ def convert_style(net_path, initial, content, style, iterations, content_weight,
             # Style loss of current layer
             style_loss += 2 * tf.nn.l2_loss(net_gram - style_gram) / style_gram.size
 
-
         # Total loss
         total_loss = content_weight * content_loss + style_weight * style_loss
 
@@ -77,14 +77,21 @@ def convert_style(net_path, initial, content, style, iterations, content_weight,
         train_step = tf.train.AdamOptimizer(learning_rate).minimize(total_loss)
 
         # Optimize
+        least_loss = float('inf')
+        best_img = None
         with tf.Session() as session:
             session.run(tf.initialize_all_variables())
 
             for i in range(iterations):
-                print(i)
                 train_step.run()
+                print("Iteration {0}/{1} complete.".format(i + 1, iterations))
 
-                if i == iterations - 1:
-                    # Last iteration reached
-                    return vgg.restore_image(image.eval().reshape(content_shape[1:]), mean)
-        
+                # If a check or last iteration is reached
+                # Check if current image produces the least loss
+                if i % check_per_iteration == 0 or i == iterations - 1:
+                    curr_loss = total_loss.eval()
+                    if (curr_loss < least_loss):
+                        least_loss = curr_loss
+                        best_img = image.eval()
+
+        return vgg.restore_image(best_img.reshape(content_shape[1:]), mean)
