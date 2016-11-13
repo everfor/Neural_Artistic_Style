@@ -17,7 +17,7 @@ def convert_style(net_path, content, style, iterations, content_weight, style_we
 
     # Extract features for content
     g = tf.Graph()
-    with g.as_default(), g.device('/cpu:0'), tf.Session() as session:
+    with g.as_default(), tf.Session() as session:
         # Build convnet in tensorflow
         image = tf.placeholder('float', shape = content_shape)
         net, mean = vgg.build_net(net_path, image)
@@ -30,7 +30,7 @@ def convert_style(net_path, content, style, iterations, content_weight, style_we
 
     # Extract features for style
     g = tf.Graph()
-    with g.as_default(), g.device('/cpu:0'), tf.Session() as session:
+    with g.as_default(), tf.Session() as session:
         # Build convnet
         image = tf.placeholder('float', shape = style_shape)
         net, _ = vgg.build_net(net_path, image)

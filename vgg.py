@@ -10,6 +10,14 @@ vgg_layers = [
     'conv5_1', 'relu5_1', 'conv5_2', 'relu5_2', 'conv5_3', 'relu5_3', 'conv5_4', 'relu5_4'
 ]
 
+vgg_layer_types = [
+    'conv', 'relu', 'conv', 'relu', 'pool',
+    'conv', 'relu', 'conv', 'relu', 'pool',
+    'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'pool',
+    'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'pool',
+    'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'conv', 'relu'
+]
+
 def build_net(path_network, input_image):
     # Load pretrained convnet
     pretrained_net = scipy.io.loadmat(path_network)
@@ -20,8 +28,7 @@ def build_net(path_network, input_image):
     convnet = {}
     current = input_image
     for i, name in enumerate(vgg_layers):
-        layer_type = name[:4]
-        if layer_type == 'conv':
+        if vgg_layer_types[i] == 'conv':
             # Convolution layer
             kernel, bias = layers[i][0][0][0][0]
             # (width, height, in_channels, out_channels) -> (height, width, in_channels, out_channels)
@@ -29,10 +36,10 @@ def build_net(path_network, input_image):
             bias = bias.reshape(-1)
             conv = tf.nn.conv2d(current, tf.constant(kernel), strides = (1, 1, 1, 1), padding = 'SAME')
             current = tf.nn.bias_add(conv, bias)
-        elif layer_type == 'relu':
+        elif vgg_layer_types[i] == 'relu':
             # Relu layer
             current = tf.nn.relu(current)
-        elif layer_type == 'pool':
+        elif vgg_layer_types[i] == 'pool':
             # Pool layer
             current = tf.nn.avg_pool(current, ksize = (1, 2, 2, 1), strides = (1, 2, 2, 1), padding = 'SAME')
         convnet[name] = current
