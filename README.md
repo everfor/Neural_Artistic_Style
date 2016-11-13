@@ -29,7 +29,7 @@ The program was tested converting the following image into different artistic st
 <img src="https://github.com/everfor/Neural_Artistic_Style/blob/master/demo/the_starry_night.jpg" height="235"/>
 
 
-- <b>Impression, Sunrise, Calude Monet, 1872, Impressionism</b>
+- <b>Impression, Sunrise, Claude Monet, 1872, Impressionism</b>
 
 ![out-1](https://github.com/everfor/Neural_Artistic_Style/blob/master/demo/out-3.jpg)
 <img src="https://github.com/everfor/Neural_Artistic_Style/blob/master/demo/sunrise.jpg" height="235"/>
