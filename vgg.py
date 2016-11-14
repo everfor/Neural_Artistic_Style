@@ -18,6 +18,8 @@ vgg_layer_types = [
     'conv', 'relu', 'conv', 'relu', 'conv', 'relu', 'conv', 'relu'
 ]
 
+# Build the vgg convnet
+# Returns convnet and mean pixel of the convnet
 def build_net(path_network, input_image):
     # Load pretrained convnet
     pretrained_net = scipy.io.loadmat(path_network)

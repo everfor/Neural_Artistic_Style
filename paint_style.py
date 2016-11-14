@@ -12,6 +12,7 @@ _default_style_weight = 1e3
 _default_check_per_iteration = 100
 _default_vgg = 'imagenet-vgg-verydeep-19.mat'
 _default_output = 'output.jpg'
+_default_preserve_color = False
 
 
 def parse_arguments():
@@ -26,6 +27,7 @@ def parse_arguments():
     parser.add_argument('--check-per-iteration', type = int, dest = 'check_per_iteration', help = 'Frequency of checking current loss', default = _default_check_per_iteration)
     parser.add_argument('-a', '--learning-rate', type = float, dest = 'learning_rate', help = 'Learning rate for neural network', default = _default_learning_rate)
     parser.add_argument('-i', '--iterations', type = int, dest = 'iterations', help = 'Max iterations', default = _default_iterations)
+    parser.add_argument('--preserve-color', type = bool, dest = 'preserve_color', help = 'Preserve color scheme of original content', default = _default_preserve_color)
 
 
     return parser.parse_args()
@@ -47,7 +49,8 @@ def run(arguments):
                 content_weight = arguments.content_weight, 
                 style_weight = arguments.style_weight, 
                 learning_rate = arguments.learning_rate,
-                check_per_iteration = arguments.check_per_iteration
+                check_per_iteration = arguments.check_per_iteration,
+                preserve_color = arguments.preserve_color
             )
 
     # Convert result from float image to uint8 image
