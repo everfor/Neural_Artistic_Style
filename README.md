@@ -14,7 +14,7 @@ Inspiration of codes drawn from [anishatahlye's neural-style][repo]. For a bette
 
 or
 
-`python3 paint_style.py -c CONTENT_IMAGE - STYLE_IMAGE -o OUTPUT_IMAGE`
+`python3 paint_style.py -c CONTENT_IMAGE -s STYLE_IMAGE -o OUTPUT_IMAGE`
 
 More options exists. Run `python3 paint_style.py --help` for a decriptions of all available options.
 
