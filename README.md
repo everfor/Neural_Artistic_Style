@@ -10,11 +10,11 @@
 - <b>A pretrained VGG19 convnet</b>. The program uses [imagenet pretrained vgg19][vgg]. By default, the program assume the convnet lies within the same folder as paint_style.py
 
 # Example Usage
-`python3 paint_style.py --content CONTENT_IMAGE --style STYLE_IMAGE --output OUTPUT_IMAGE`
+`python3 paint_style.py --content CONTENT_IMAGE --styles STYLE_IMAGE(s) --output OUTPUT_IMAGE`
 
 or
 
-`python3 paint_style.py -c CONTENT_IMAGE -s STYLE_IMAGE -o OUTPUT_IMAGE`
+`python3 paint_style.py -c CONTENT_IMAGE -s STYLE_IMAGE(s) -o OUTPUT_IMAGE`
 
 Run with `--preserve-colors True` to preserve the original color schemes
 
