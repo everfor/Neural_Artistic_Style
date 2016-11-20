@@ -7,21 +7,26 @@ style_layers = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 
 # Convert the art style of "content" to the art style of "style"
 # Returns np array containnig the result image
-def convert_style(net_path, content, style, iterations, content_weight, style_weight, learning_rate, check_per_iteration, preserve_color):
+def convert_style(net_path, content, styles, iterations, content_weight, style_weight, style_merge_weight, learning_rate, check_per_iteration, preserve_color):
     print("Total iterations: {0}".format(iterations))
 
     # If preserve color, then transfer color scheme for style image first
     if preserve_color:
         print("Options detected: preserve original content color scheme")
-        style = transfer_color(content, style)
+        for style in styles:
+            style = transfer_color(content, style)
+
+    # Construct merge weight for styles
+    if style_merge_weight == None:
+        style_merge_weight = [1.0 / len(styles) for _ in styles]
 
     # Store shapes of both images
     content_shape = (1,) + content.shape
-    style_shape = (1,) + style.shape
+    style_shapes = [(1,) + style.shape for style in styles]
 
     # Features
     content_features = {}
-    style_features = {}
+    style_features = [{} for _ in styles]
 
     # Extract features for content
     g = tf.Graph()
@@ -36,18 +41,19 @@ def convert_style(net_path, content, style, iterations, content_weight, style_we
 
     print("Content feature extracted")
 
-    # Extract features for style
-    g = tf.Graph()
-    with g.as_default(), tf.Session() as session:
-        # Build convnet
-        image = tf.placeholder('float', shape = style_shape)
-        net, _ = vgg.build_net(net_path, image)
-        # Extract style features
-        preprocessed_style = np.array([vgg.pre_process_image(style, mean)])
-        for layer in style_layers:
-            layer_features = net[layer].eval(
-                feed_dict = {image: preprocessed_style})
-            style_features[layer] = layer_features
+    for i, style in enumerate(styles):
+        # Extract features for style
+        g = tf.Graph()
+        with g.as_default(), tf.Session() as session:
+            # Build convnet
+            image = tf.placeholder('float', shape = style_shapes[i])
+            net, _ = vgg.build_net(net_path, image)
+            # Extract style features
+            preprocessed_style = np.array([vgg.pre_process_image(style, mean)])
+            for layer in style_layers:
+                layer_features = net[layer].eval(
+                    feed_dict = {image: preprocessed_style})
+                style_features[i][layer] = layer_features
 
     print("Style feature extracted")
 
@@ -64,19 +70,23 @@ def convert_style(net_path, content, style, iterations, content_weight, style_we
 
         # Calculate style loss
         style_loss = 0
-        for layer in style_layers:
-            # Gram of original convnet layers
-            net_layer = net[layer]
-            _, height, width, channels = map(lambda i: i.value, net_layer.get_shape())
-            net_size = height * width * channels
-            net_features = tf.reshape(net_layer, (-1, channels))
-            net_gram = tf.matmul(tf.transpose(net_features), net_features) / net_size
-            # Gram of style
-            style_layer = style_features[layer]
-            style_layer_features = np.reshape(style_layer, (-1, style_layer.shape[3]))
-            style_gram = np.matmul(style_layer_features.T, style_layer_features) / style_layer_features.size
-            # Style loss of current layer
-            style_loss += 2 * tf.nn.l2_loss(net_gram - style_gram) / style_gram.size
+
+        for i, _ in enumerate(style_features):
+            curr_style_loss = 0
+            for layer in style_layers:
+                # Gram of original convnet layers
+                net_layer = net[layer]
+                _, height, width, channels = map(lambda i: i.value, net_layer.get_shape())
+                net_size = height * width * channels
+                net_features = tf.reshape(net_layer, (-1, channels))
+                net_gram = tf.matmul(tf.transpose(net_features), net_features) / net_size
+                # Gram of style
+                style_layer = style_features[i][layer]
+                style_layer_features = np.reshape(style_layer, (-1, style_layer.shape[3]))
+                style_gram = np.matmul(style_layer_features.T, style_layer_features) / style_layer_features.size
+                # Style loss of current layer
+                curr_style_loss += 2 * tf.nn.l2_loss(net_gram - style_gram) / style_gram.size
+            style_loss += style_merge_weight[i] * curr_style_loss
 
         # Total loss
         total_loss = content_weight * content_loss + style_weight * style_loss

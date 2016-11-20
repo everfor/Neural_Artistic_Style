@@ -19,11 +19,12 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-c', '--content', dest = 'content', help = 'Input content image', required = True)
-    parser.add_argument('-s', '--style', dest = 'style', help = 'Style image', required = True)
+    parser.add_argument('-s', '--styles', dest = 'styles', nargs = '+', help = 'Style image(s)', required = True)
     parser.add_argument('-o', '--output', dest = 'output', help = 'Output image', default = _default_output)
     parser.add_argument('--vgg', dest = 'vgg', help = 'Path to pretrained vgg19 network', default = _default_vgg)
     parser.add_argument('--content-weight', type = float, dest = 'content_weight', help = 'Weight for content (input) image', default = _default_content_weight)
     parser.add_argument('--style-weight', type = float, dest = 'style_weight', help = 'Weight for style image', default = _default_style_weight)
+    parser.add_argument('--style-merge-weight', type = float, dest = 'style_merge_weight', nargs = '+', help = 'Weights for style merges', default = None)
     parser.add_argument('--check-per-iteration', type = int, dest = 'check_per_iteration', help = 'Frequency of checking current loss', default = _default_check_per_iteration)
     parser.add_argument('-a', '--learning-rate', type = float, dest = 'learning_rate', help = 'Learning rate for neural network', default = _default_learning_rate)
     parser.add_argument('-i', '--iterations', type = int, dest = 'iterations', help = 'Max iterations', default = _default_iterations)
@@ -35,19 +36,24 @@ def parse_arguments():
 def run(arguments):
     # Load images
     content = scipy.misc.imread(arguments.content).astype(np.float)
-    style = scipy.misc.imread(arguments.style).astype(np.float)
-    # Resize style image so it is the same size as content
-    style = scipy.misc.imresize(style, content.shape[1] / style.shape[1])
+
+    styles = [scipy.misc.imread(style).astype(np.float) for style in arguments.styles]
+
+    for style in styles:
+        # Resize style image so it is the same size as content
+        style = scipy.misc.imresize(style, content.shape[1] / style.shape[1])
+
 
     print("Running neural style algorithm. Output will be stored in: " + arguments.output)
 
     result = st.convert_style(
                 net_path = arguments.vgg,
                 content = content, 
-                style = style, 
+                styles = styles, 
                 iterations = arguments.iterations, 
                 content_weight = arguments.content_weight, 
                 style_weight = arguments.style_weight, 
+                style_merge_weight = arguments.style_merge_weight,
                 learning_rate = arguments.learning_rate,
                 check_per_iteration = arguments.check_per_iteration,
                 preserve_color = arguments.preserve_color
